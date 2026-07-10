@@ -1,711 +1,1874 @@
-import {
-    db,
-    ref,
-    set,
-    push,
-    onValue,
-    update,
-    remove
+// ========================
+// VIDEO POPUP FUNCTIONALITY
+// ========================
+
+// DOM Elements
+const openVideoBtn1 = document.getElementById('openVideoBtn1');
+const openVideoBtn2 = document.getElementById('openVideoBtn2');
+const videoPopup = document.getElementById('videoPopup');
+const closeVideoBtn = document.getElementById('closeVideoBtn');
+const popupOverlay = document.getElementById('popupOverlay');
+const videoElement = document.getElementById('myVideo');
+const backToTopBtn = document.getElementById('backToTop');
+
+// Open 3 months video popup
+openVideoBtn1.addEventListener('click', () => {
+  videoPopup.classList.add('show');
+  document.body.style.overflow = 'hidden'; // Disable scrolling
+  
+  // Reset and play video
+  videoElement.currentTime = 0;
+  setTimeout(() => {
+    videoElement.play().catch(e => console.log('Autoplay prevented:', e));
+  }, 300);
+});
+
+// Open 100 days in new tab
+openVideoBtn2.addEventListener('click', () => {
+  window.open('100Days.html', '_blank', 'noopener,noreferrer');
+});
+
+// Close popup functions
+const closePopup = () => {
+  videoPopup.classList.remove('show');
+  document.body.style.overflow = 'auto'; // Enable scrolling
+  videoElement.pause();
+  videoElement.currentTime = 0;
+};
+
+closeVideoBtn.addEventListener('click', closePopup);
+popupOverlay.addEventListener('click', closePopup);
+
+// Close popup with Escape key
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'Escape' && videoPopup.classList.contains('show')) {
+    closePopup();
+  }
+});
+
+// ========================
+// LOVE DAYS COUNTER
+// ========================
+function calculateLoveDays() {
+  const startDate = new Date('2025-04-20');
+  const currentDate = new Date();
+  
+  // Calculate difference in milliseconds
+  const timeDifference = currentDate.getTime() - startDate.getTime();
+  
+  // Convert to days
+  const daysDifference = Math.floor(timeDifference / (1000 * 3600 * 24));
+  
+  return daysDifference > 0 ? daysDifference : 0;
 }
-from "./firebase.js";
+
+function updateLoveCounter() {
+  const daysTogether = calculateLoveDays();
+  const daysElement = document.getElementById('total-days');
+  
+  // Animated counter
+  let currentCount = 0;
+  const increment = Math.max(1, Math.floor(daysTogether / 100));
+  const duration = 1500; // ms
+  const stepTime = Math.max(10, Math.floor(duration / (daysTogether / increment)));
+  
+  const timer = setInterval(() => {
+    currentCount += increment;
+    if (currentCount >= daysTogether) {
+      currentCount = daysTogether;
+      clearInterval(timer);
+    }
+    daysElement.textContent = currentCount.toLocaleString();
+  }, stepTime);
+}
+
+// ========================
+// BACK TO TOP FUNCTIONALITY
+// ========================
+function setupBackToTop() {
+  window.addEventListener('scroll', () => {
+    if (window.pageYOffset > 300) {
+      backToTopBtn.style.opacity = '1';
+      backToTopBtn.style.visibility = 'visible';
+      backToTopBtn.style.transform = 'translateY(0)';
+    } else {
+      backToTopBtn.style.opacity = '0';
+      backToTopBtn.style.visibility = 'hidden';
+      backToTopBtn.style.transform = 'translateY(20px)';
+    }
+  });
+  
+  backToTopBtn.addEventListener('click', () => {
+    window.scrollTo({
+      top: 0,
+      behavior: 'smooth'
+    });
+  });
+}
+
+// ========================
+// INITIALIZE EVERYTHING
+// ========================
+document.addEventListener('DOMContentLoaded', () => {
+  // Initialize love counter
+  updateLoveCounter();
+  
+  // Update counter every day at midnight
+  const now = new Date();
+  const tomorrow = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1);
+  const timeToMidnight = tomorrow.getTime() - now.getTime();
+  
+  setTimeout(() => {
+    updateLoveCounter();
+    // Update every 24 hours
+    setInterval(updateLoveCounter, 24 * 60 * 60 * 1000);
+  }, timeToMidnight);
+  
+  // Setup back to top button
+  setupBackToTop();
+  
+  // Add click animation to video buttons
+  const videoButtons = [openVideoBtn1, openVideoBtn2];
+  videoButtons.forEach(button => {
+    button.addEventListener('click', function() {
+      this.style.transform = 'scale(0.95)';
+      setTimeout(() => {
+        this.style.transform = '';
+      }, 200);
+    });
+  });
+  
+  // Add keyboard navigation for video popup
+  videoPopup.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') {
+      closePopup();
+    }
+  });
+  
+  // Focus trap for video popup
+  const focusableElements = videoPopup.querySelectorAll(
+    'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
+  );
+  const firstFocusableElement = focusableElements[0];
+  const lastFocusableElement = focusableElements[focusableElements.length - 1];
+  
+  document.addEventListener('keydown', (e) => {
+    if (!videoPopup.classList.contains('show')) return;
+    
+    if (e.key === 'Tab') {
+      if (e.shiftKey) {
+        if (document.activeElement === firstFocusableElement) {
+          lastFocusableElement.focus();
+          e.preventDefault();
+        }
+      } else {
+        if (document.activeElement === lastFocusableElement) {
+          firstFocusableElement.focus();
+          e.preventDefault();
+        }
+      }
+    }
+  });
+});
 
 
-/* =====================================================================
-   LOVE STORY — Sang & Nguyệt — script.js
-   Refactor 2026 — module pattern, tách rõ DOM / Events / Animation / Utils
-===================================================================== */
+
+// Tính số ngày yêu nhau
+function calculateDaysTogether() {
+    const startDate = new Date('2025-04-20');
+    const currentDate = new Date();
+
+    // Tính số mili giây chênh lệch
+    const timeDifference = currentDate.getTime() - startDate.getTime();
+
+    // Chuyển đổi từ mili giây sang ngày
+    const daysTogether = Math.floor(timeDifference / (1000 * 3600 * 24));
+
+    return daysTogether;
+}
+
+// Cập nhật số ngày lên giao diện
+function updateDaysCounter() {
+    const daysTogether = calculateDaysTogether();
+    const daysElement = document.getElementById('total-days');
+
+    // Hiệu ứng đếm số
+    let currentCount = 0;
+    const increment = Math.ceil(daysTogether / 100);
+    const timer = setInterval(() => {
+        currentCount += increment;
+        if (currentCount >= daysTogether) {
+            currentCount = daysTogether;
+            clearInterval(timer);
+        }
+        daysElement.textContent = currentCount;
+    }, 20);
+}
+
+// Xử lý popup video
+function setupVideoPopup() {
+    const videoPopup = document.getElementById('videoPopup');
+    const closeVideoBtn = document.getElementById('closeVideoBtn');
+    const videoElement = document.getElementById('myVideo');
+    const openVideoBtn1 = document.getElementById('openVideoBtn1');
+    const openVideoBtn2 = document.getElementById('openVideoBtn2');
+
+    // Mở popup khi nhấn nút video 3 tháng
+    openVideoBtn1.addEventListener('click', () => {
+        videoPopup.style.display = 'flex';
+        document.body.style.overflow = 'hidden'; // Ngăn cuộn trang nền
+
+        // Đặt nguồn video cho kỷ niệm 3 tháng
+        videoElement.src = "https://assets.mixkit.co/videos/preview/mixkit-happy-couple-looking-at-the-sunset-2134-large.mp4";
+        videoElement.load();
+    });
+
+    // Mở popup khi nhấn nút video 100 ngày
+    openVideoBtn2.addEventListener('click', () => {
+        videoPopup.style.display = 'flex';
+        document.body.style.overflow = 'hidden'; // Ngăn cuộn trang nền
+
+        // Đặt nguồn video cho kỷ niệm 100 ngày
+        videoElement.src = "https://assets.mixkit.co/videos/preview/mixkit-couple-hugging-on-a-walk-4985-large.mp4";
+        videoElement.load();
+    });
+
+    // Đóng popup khi nhấn nút đóng
+    closeVideoBtn.addEventListener('click', () => {
+        videoPopup.style.display = 'none';
+        document.body.style.overflow = 'auto';
+        videoElement.pause();
+    });
+
+    // Đóng popup khi nhấn ra ngoài video
+    videoPopup.addEventListener('click', (e) => {
+        if (e.target === videoPopup) {
+            videoPopup.style.display = 'none';
+            document.body.style.overflow = 'auto';
+            videoElement.pause();
+        }
+    });
+
+    // Đóng popup bằng phím Esc
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape' && videoPopup.style.display === 'flex') {
+            videoPopup.style.display = 'none';
+            document.body.style.overflow = 'auto';
+            videoElement.pause();
+        }
+    });
+}
+
+// Thêm hiệu ứng hover cho các nút
+function addButtonEffects() {
+    const buttons = document.querySelectorAll('.open-video-btn');
+
+    buttons.forEach(button => {
+        button.addEventListener('mouseenter', function () {
+            const icon = this.querySelector('.icon');
+            icon.style.transform = 'scale(1.2)';
+            icon.style.transition = 'transform 0.3s ease';
+        });
+
+        button.addEventListener('mouseleave', function () {
+            const icon = this.querySelector('.icon');
+            icon.style.transform = 'scale(1)';
+        });
+    });
+}
+
+// Khởi tạo khi trang tải xong
+document.addEventListener('DOMContentLoaded', () => {
+    createFloatingHearts();
+    updateDaysCounter();
+    setupVideoPopup();
+    addButtonEffects();
+
+    // Cập nhật số ngày mỗi ngày
+    setInterval(updateDaysCounter, 24 * 60 * 60 * 1000);
+});
+
+
+// Hiệu ứng scroll cho timeline
+function initTimelineScroll() {
+    const timelineItems = document.querySelectorAll('.timeline-item');
+
+    const observer = new IntersectionObserver((entries) => {
+        entries.forEach(entry => {
+            if (entry.isIntersecting) {
+                entry.target.classList.add('visible');
+
+                // Thêm hiệu ứng delay cho từng item
+                const index = Array.from(timelineItems).indexOf(entry.target);
+                entry.target.style.transitionDelay = (index * 0.2) + 's';
+            }
+        });
+    }, {
+        threshold: 0.3,
+        rootMargin: '0px 0px -100px 0px'
+    });
+
+    timelineItems.forEach(item => {
+        observer.observe(item);
+    });
+}
+
+// Hiệu ứng hover cho timeline items
+function initTimelineHover() {
+    const timelineContents = document.querySelectorAll('.timeline-content');
+
+    timelineContents.forEach(content => {
+        content.addEventListener('mouseenter', () => {
+            const dateElement = content.querySelector('.timeline-date');
+            dateElement.style.color = '#ff2d75';
+        });
+
+        content.addEventListener('mouseleave', () => {
+            const dateElement = content.querySelector('.timeline-date');
+            dateElement.style.color = '';
+        });
+    });
+}
+
+// Nút back to top
+function initBackToTop() {
+    const backToTopBtn = document.getElementById('backToTop');
+
+    window.addEventListener('scroll', () => {
+        if (window.scrollY > 300) {
+            backToTopBtn.classList.add('show');
+        } else {
+            backToTopBtn.classList.remove('show');
+        }
+    });
+
+    backToTopBtn.addEventListener('click', (e) => {
+        e.preventDefault();
+        window.scrollTo({
+            top: 0,
+            behavior: 'smooth'
+        });
+    });
+}
+
+// Hiệu ứng mở đầu
+function initEntranceAnimation() {
+    const timeline = document.querySelector('.timeline');
+    timeline.style.opacity = '0';
+    timeline.style.transform = 'translateY(50px)';
+
+    setTimeout(() => {
+        timeline.style.transition = 'all 1s ease';
+        timeline.style.opacity = '1';
+        timeline.style.transform = 'translateY(0)';
+    }, 500);
+}
+
+// Hiệu ứng click vào timeline item
+function initClickEffects() {
+    const timelineItems = document.querySelectorAll('.timeline-item');
+
+    timelineItems.forEach(item => {
+        item.addEventListener('click', () => {
+            const content = item.querySelector('.timeline-content');
+
+            // Tạo hiệu ứng ripple
+            const ripple = document.createElement('div');
+            ripple.style.cssText = `
+                        position: absolute;
+                        border-radius: 50%;
+                        background: rgba(255, 45, 117, 0.3);
+                        transform: scale(0);
+                        animation: ripple 0.6s linear;
+                        pointer-events: none;
+                    `;
+
+            const rect = content.getBoundingClientRect();
+            const size = Math.max(rect.width, rect.height);
+            const x = rect.left + rect.width / 2 - size / 2;
+            const y = rect.top + rect.height / 2 - size / 2;
+
+            ripple.style.width = ripple.style.height = size + 'px';
+            ripple.style.left = x + 'px';
+            ripple.style.top = y + 'px';
+
+            document.body.appendChild(ripple);
+
+            // Thêm style cho ripple animation
+            const style = document.createElement('style');
+            style.textContent = `
+                        @keyframes ripple {
+                            to {
+                                transform: scale(4);
+                                opacity: 0;
+                            }
+                        }
+                    `;
+            document.head.appendChild(style);
+
+            // Xóa ripple sau khi animation kết thúc
+            setTimeout(() => {
+                ripple.remove();
+                style.remove();
+            }, 600);
+        });
+    });
+}
+
+// Khởi tạo tất cả
+document.addEventListener('DOMContentLoaded', () => {
+    initTimelineScroll();
+    initTimelineHover();
+    initBackToTop();
+    initEntranceAnimation();
+    initClickEffects();
+
+    console.log('❤️ Timeline tình yêu đã sẵn sàng!');
+});
+
+// Hiệu ứng parallax đơn giản
+window.addEventListener('scroll', () => {
+    const scrolled = window.pageYOffset;
+    const timeline = document.querySelector('.timeline');
+    const rate = scrolled * -0.5;
+
+    timeline.style.transform = `translateY(${rate * 0.1}px)`;
+});
+
+
+
+
+// -     ----------------------------------
+
+/* ===========================================
+   LỊCH TÌNH YÊU - ỨNG DỤNG HOÀN CHỈNH
+   Tối ưu hóa & Cấu trúc lại - 09/12/2025
+=========================================== */
+
 "use strict";
 
-/* =========================================================
-   UTILS
-========================================================= */
-const Utils = {
-  qs: (sel, ctx = document) => ctx.querySelector(sel),
-  qsa: (sel, ctx = document) => Array.from(ctx.querySelectorAll(sel)),
-
-  pad2(n){ return n < 10 ? `0${n}` : String(n); },
-
-  onReady(fn){
-    if (document.readyState !== "loading") fn();
-    else document.addEventListener("DOMContentLoaded", fn);
-  },
-
-  debounce(fn, wait = 150){
-    let t;
-    return (...args) => {
-      clearTimeout(t);
-      t = setTimeout(() => fn(...args), wait);
-    };
-  },
-
-  clamp(n, min, max){ return Math.min(Math.max(n, min), max); }
-};
-
-/* =========================================================
-   TOAST — thông báo nổi
-========================================================= */
-const Toast = (() => {
-  let el;
-  function ensure(){
-    if (el) return el;
-    el = document.createElement("div");
-    el.className = "toast";
-    el.setAttribute("role", "status");
-    document.body.appendChild(el);
-    return el;
-  }
-  function show(msg, duration = 2600){
-    const node = ensure();
-    node.textContent = msg;
-    node.classList.add("is-show");
-    clearTimeout(node._t);
-    node._t = setTimeout(() => node.classList.remove("is-show"), duration);
-  }
-  return { show };
-})();
-
-/* =========================================================
-   NAVIGATION — menu mobile + scroll state + smooth scroll
-========================================================= */
-const Nav = {
-  init(){
-    this.nav = Utils.qs(".site-nav");
-    this.toggle = Utils.qs(".nav-toggle");
-    this.menu = Utils.qs(".nav-menu");
-    if (!this.nav) return;
-
-    this.bindScroll();
-    this.bindToggle();
-    this.bindSmoothScroll();
-    this.bindActiveLink();
-  },
-
-  bindScroll(){
-    const onScroll = () => this.nav.classList.toggle("is-scrolled", window.scrollY > 24);
-    onScroll();
-    window.addEventListener("scroll", onScroll, { passive: true });
-  },
-
-  bindToggle(){
-    if (!this.toggle || !this.menu) return;
-    this.toggle.addEventListener("click", () => {
-      const isOpen = this.menu.classList.toggle("is-open");
-      this.toggle.setAttribute("aria-expanded", String(isOpen));
-      document.body.style.overflow = isOpen ? "hidden" : "";
-    });
-    Utils.qsa("a", this.menu).forEach(a => a.addEventListener("click", () => {
-      this.menu.classList.remove("is-open");
-      this.toggle.setAttribute("aria-expanded", "false");
-      document.body.style.overflow = "";
-    }));
-  },
-
-  bindSmoothScroll(){
-    Utils.qsa('a[href^="#"]').forEach(a => {
-      a.addEventListener("click", e => {
-        const id = a.getAttribute("href");
-        if (id.length < 2) return;
-        const target = Utils.qs(id);
-        if (!target) return;
-        e.preventDefault();
-        const y = target.getBoundingClientRect().top + window.scrollY - 72;
-        window.scrollTo({ top: y, behavior: "smooth" });
-      });
-    });
-  },
-
-  bindActiveLink(){
-    const links = Utils.qsa(".nav-menu a[href^='#']");
-    const sections = links
-      .map(a => Utils.qs(a.getAttribute("href")))
-      .filter(Boolean);
-    if (!("IntersectionObserver" in window) || !sections.length) return;
-
-    const obs = new IntersectionObserver(entries => {
-      entries.forEach(entry => {
-        if (!entry.isIntersecting) return;
-        const id = `#${entry.target.id}`;
-        links.forEach(a => a.classList.toggle("is-active", a.getAttribute("href") === id));
-      });
-    }, { rootMargin: "-45% 0px -50% 0px" });
-
-    sections.forEach(s => obs.observe(s));
-  }
-};
-
-/* =========================================================
-   REVEAL ON SCROLL — fade/slide-in cho các block .reveal
-========================================================= */
-const Reveal = {
-  init(){
-    const items = Utils.qsa(".reveal");
-    if (!items.length) return;
-
-    if (!("IntersectionObserver" in window)) {
-      items.forEach(el => el.classList.add("is-visible"));
-      return;
+// ============================
+// CẤU HÌNH & BIẾN TOÀN CỤC
+// ============================
+const CONFIG = {
+    loveDate: new Date("April 20, 2025 00:00:00").getTime(),
+    calendar: {
+        currentMonth: new Date().getMonth(),
+        currentYear: new Date().getFullYear()
+    },
+    storageKey: 'love_calendar_data',
+    animation: {
+        bubbleCount: 15,
+        bubbleMinSize: 10,
+        bubbleMaxSize: 30,
+        bubbleDuration: 3000
     }
-    const obs = new IntersectionObserver((entries) => {
-      entries.forEach(entry => {
-        if (entry.isIntersecting) {
-          entry.target.classList.add("is-visible");
-          obs.unobserve(entry.target);
-        }
-      });
-    }, { threshold: 0.15, rootMargin: "0px 0px -60px 0px" });
-
-    items.forEach((el, i) => {
-      el.style.transitionDelay = `${Math.min(i % 6, 5) * 70}ms`;
-      obs.observe(el);
-    });
-  }
 };
 
-/* =========================================================
-   LOVE COUNTER — đếm ngày/giờ/phút/giây yêu nhau
-========================================================= */
+let events = {};
+let activeCalendar = false;
+
+// ============================
+// MODULE 1: BỘ ĐẾM THỜI GIAN YÊU
+// ============================
 const LoveCounter = {
-  startDate: new Date("2025-04-20T00:00:00"),
+    init() {
+        this.update();
+        setInterval(() => this.update(), 1000);
+        console.log("❤️ Bộ đếm tình yêu đã khởi động!");
+    },
 
-  init(){
-    this.els = {
-      days: Utils.qs("#days"),
-      hours: Utils.qs("#hours"),
-      minutes: Utils.qs("#minutes"),
-      seconds: Utils.qs("#seconds")
-    };
-    if (!this.els.days) return;
-    this.tick();
-    this._interval = setInterval(() => this.tick(), 1000);
-  },
+    update() {
+        const now = Date.now();
+        const distance = now - CONFIG.loveDate;
 
-  tick(){
-    const now = new Date();
-    let diff = Math.max(0, now - this.startDate);
+        if (distance > 0) {
+            this.displayElapsedTime(distance);
+        } else {
+            this.displayCountdown(Math.abs(distance));
+        }
+    },
 
-    const totalSeconds = Math.floor(diff / 1000);
-    const days = Math.floor(totalSeconds / 86400);
-    const hours = Math.floor((totalSeconds % 86400) / 3600);
-    const minutes = Math.floor((totalSeconds % 3600) / 60);
-    const seconds = totalSeconds % 60;
+    displayCountdown(timeLeft) {
+        const units = this.calculateTimeUnits(timeLeft);
+        this.updateDisplay({
+            days: "⌛" + this.formatNumber(units.days),
+            hours: this.formatNumber(units.hours),
+            minutes: this.formatNumber(units.minutes),
+            seconds: this.formatNumber(units.seconds)
+        });
+    },
 
-    if (this.els.days) this.els.days.textContent = days;
-    if (this.els.hours) this.els.hours.textContent = Utils.pad2(hours);
-    if (this.els.minutes) this.els.minutes.textContent = Utils.pad2(minutes);
-    if (this.els.seconds) this.els.seconds.textContent = Utils.pad2(seconds);
-  }
-};
+    displayElapsedTime(distance) {
+        const units = this.calculateTimeUnits(distance);
+        this.updateDisplay({
+            days: this.formatNumber(units.days),
+            hours: this.formatNumber(units.hours),
+            minutes: this.formatNumber(units.minutes),
+            seconds: this.formatNumber(units.seconds)
+        });
+    },
 
-/* =========================================================
-   FOOTER DAYS COUNTER — số ngày lớn ở footer, có hiệu ứng đếm
-========================================================= */
-const FooterCounter = {
-  startDate: new Date("2025-04-20T00:00:00"),
+    calculateTimeUnits(milliseconds) {
+        const seconds = Math.floor(milliseconds / 1000);
+        const minutes = Math.floor(seconds / 60);
+        const hours = Math.floor(minutes / 60);
+        const days = Math.floor(hours / 24);
 
-  init(){
-    this.el = Utils.qs("#total-days");
-    if (!this.el) return;
-    this.animateTo(this.daysTogether());
-  },
+        return {
+            days,
+            hours: hours % 24,
+            minutes: minutes % 60,
+            seconds: seconds % 60
+        };
+    },
 
-  daysTogether(){
-    const diff = Date.now() - this.startDate.getTime();
-    return Math.max(0, Math.floor(diff / 86400000));
-  },
+    formatNumber(num) {
+        return num < 10 ? `0${num}` : num.toString();
+    },
 
-  animateTo(target){
-    const duration = 1200;
-    const start = performance.now();
-    const step = (now) => {
-      const progress = Utils.clamp((now - start) / duration, 0, 1);
-      const eased = 1 - Math.pow(1 - progress, 3);
-      this.el.textContent = Math.round(eased * target).toLocaleString("vi-VN");
-      if (progress < 1) requestAnimationFrame(step);
-    };
-    requestAnimationFrame(step);
-  }
-};
-
-/* =========================================================
-   CAROUSEL — custom, không phụ thuộc Bootstrap
-========================================================= */
-class Carousel {
-  constructor(root){
-    this.root = root;
-    this.track = Utils.qs(".carousel__track", root);
-    this.slides = Utils.qsa(".carousel__slide", root);
-    this.dotsWrap = Utils.qs(".carousel__dots", root);
-    this.index = 0;
-    this.autoplayMs = 5000;
-    this.init();
-  }
-
-  init(){
-    if (!this.slides.length) return;
-    this.buildDots();
-    this.bindControls();
-    this.bindSwipe();
-    this.goTo(0);
-    this.startAutoplay();
-
-    this.root.addEventListener("mouseenter", () => this.stopAutoplay());
-    this.root.addEventListener("mouseleave", () => this.startAutoplay());
-  }
-
-  buildDots(){
-    if (!this.dotsWrap) return;
-    this.dotsWrap.innerHTML = "";
-    this.slides.forEach((_, i) => {
-      const dot = document.createElement("button");
-      dot.className = "carousel__dot";
-      dot.setAttribute("aria-label", `Xem ảnh ${i + 1}`);
-      dot.addEventListener("click", () => this.goTo(i));
-      this.dotsWrap.appendChild(dot);
-    });
-  }
-
-  bindControls(){
-    const prev = Utils.qs(".carousel__btn--prev", this.root);
-    const next = Utils.qs(".carousel__btn--next", this.root);
-    if (prev) prev.addEventListener("click", () => this.goTo(this.index - 1));
-    if (next) next.addEventListener("click", () => this.goTo(this.index + 1));
-  }
-
-  bindSwipe(){
-    let startX = 0;
-    let dx = 0;
-    this.track.addEventListener("touchstart", e => {
-      startX = e.touches[0].clientX;
-      this.stopAutoplay();
-    }, { passive: true });
-    this.track.addEventListener("touchmove", e => {
-      dx = e.touches[0].clientX - startX;
-    }, { passive: true });
-    this.track.addEventListener("touchend", () => {
-      if (Math.abs(dx) > 40) this.goTo(this.index + (dx < 0 ? 1 : -1));
-      dx = 0;
-      this.startAutoplay();
-    });
-  }
-
-  goTo(i){
-    this.index = (i + this.slides.length) % this.slides.length;
-    this.track.style.transform = `translateX(-${this.index * 100}%)`;
-    if (this.dotsWrap) {
-      Utils.qsa(".carousel__dot", this.dotsWrap).forEach((d, idx) =>
-        d.classList.toggle("is-active", idx === this.index));
+    updateDisplay(data) {
+        Object.keys(data).forEach(id => {
+            const element = document.getElementById(id);
+            if (element) element.textContent = data[id];
+        });
     }
-  }
+};
 
-  startAutoplay(){
-    this.stopAutoplay();
-    this._timer = setInterval(() => this.goTo(this.index + 1), this.autoplayMs);
-  }
-  stopAutoplay(){ clearInterval(this._timer); }
+// ============================
+// MODULE 2: LỊCH TÌNH YÊU (LocalStorage)
+// ============================
+const LoveCalendar = {
+    init() {
+        this.loadEvents();
+        this.render();
+        this.addControls();
+        this.addMonthNavigation(); // <- THÊM DÒNG NÀY
+        console.log("📅 Lịch tình yêu đã khởi động!");
+        return true;
+    },
+
+    loadEvents() {
+        try {
+            const saved = localStorage.getItem(CONFIG.storageKey);
+            events = saved ? JSON.parse(saved) : {};
+            console.log(`📥 Đã tải ${Object.keys(events).length} sự kiện`);
+            this.updateStatus('✅ Dữ liệu đã sẵn sàng');
+            return events;
+        } catch (error) {
+            console.error('❌ Lỗi đọc dữ liệu:', error);
+            events = {};
+            this.updateStatus('❌ Lỗi đọc dữ liệu');
+            return {};
+        }
+    },
+    // THÊM HÀM MỚI: Xử lý nút chuyển tháng
+    addMonthNavigation() {
+        const prevBtn = document.querySelector('.calendar-controls button:first-child');
+        const nextBtn = document.querySelector('.calendar-controls button:nth-child(2)');
+
+        if (prevBtn) {
+            prevBtn.addEventListener('click', () => {
+                this.changeMonth(-1);
+                this.updateMonthButtons(); // Cập nhật trạng thái nút
+            });
+        }
+
+        if (nextBtn) {
+            nextBtn.addEventListener('click', () => {
+                this.changeMonth(1);
+                this.updateMonthButtons(); // Cập nhật trạng thái nút
+            });
+        }
+
+        // Cập nhật trạng thái ban đầu
+        this.updateMonthButtons();
+    },
+
+    saveEvents() {
+        try {
+            localStorage.setItem(CONFIG.storageKey, JSON.stringify(events));
+            return true;
+        } catch (error) {
+            console.error('❌ Lỗi lưu dữ liệu:', error);
+            return false;
+        }
+    },
+
+    render() {
+        const calendar = document.getElementById("calendar");
+        const title = document.getElementById("month-year-title");
+
+        if (!calendar || !title) return false;
+
+        // Xóa lịch cũ
+        calendar.innerHTML = "";
+
+        // Cập nhật tiêu đề
+        const monthName = this.getMonthName(CONFIG.calendar.currentMonth);
+        title.textContent = `${monthName} ${CONFIG.calendar.currentYear}`;
+
+        // Tính toán ngày
+        const firstDay = new Date(CONFIG.calendar.currentYear, CONFIG.calendar.currentMonth, 1);
+        const firstDayIndex = firstDay.getDay();
+        const daysInMonth = new Date(CONFIG.calendar.currentYear, CONFIG.calendar.currentMonth + 1, 0).getDate();
+
+        // Thêm ô trống đầu tháng
+        for (let i = 0; i < firstDayIndex; i++) {
+            calendar.appendChild(this.createDayElement(null));
+        }
+
+        // Thêm các ngày trong tháng
+        for (let day = 1; day <= daysInMonth; day++) {
+            calendar.appendChild(this.createDayElement(day));
+        }
+
+        return true;
+    },
+
+    createDayElement(day) {
+        const dayElement = document.createElement("div");
+        dayElement.className = "day";
+
+        if (day === null) {
+            dayElement.classList.add("empty");
+            return dayElement;
+        }
+
+        // Thêm số ngày
+        const number = document.createElement("div");
+        number.className = "day-number";
+        number.textContent = day;
+        dayElement.appendChild(number);
+
+        // Thêm sự kiện nếu có
+        const dateKey = this.getDateKey(day);
+        if (events[dateKey]) {
+            dayElement.appendChild(this.createEventElement(events[dateKey]));
+        }
+
+        // Thêm sự kiện click
+        dayElement.addEventListener("click", (e) => {
+            e.stopPropagation();
+            this.showEditPopup(dayElement, dateKey, day);
+        });
+
+        return dayElement;
+    },
+
+    createEventElement(text) {
+        const eventElement = document.createElement("div");
+        eventElement.className = "event";
+        eventElement.title = text;
+
+        // Giới hạn hiển thị
+        const displayText = text.length > 9 ? text.substring(0, 9) + '...' : text;
+        eventElement.textContent = displayText;
+
+        return eventElement;
+    },
+
+    showEditPopup(dayElement, dateKey, day) {
+        // Xóa popup cũ nếu có
+        this.removeExistingPopup();
+
+        // Tạo popup mới
+        const popup = document.createElement('div');
+        popup.className = 'edit-popup';
+        popup.innerHTML = this.getPopupHTML(day, events[dateKey] || '');
+
+        // Thêm sự kiện
+        this.setupPopupEvents(popup, dateKey, dayElement);
+
+        // Hiển thị
+        dayElement.appendChild(popup);
+        popup.querySelector('#eventInput').focus();
+    },
+
+    getPopupHTML(day, currentText) {
+        return `
+            <h3>Ngày ${day}</h3>
+            <input type="text" 
+                   id="eventInput" 
+                   placeholder="Nhập sự kiện..." 
+                   maxlength="50"
+                   value="${currentText}">
+            <div class="char-count">${currentText.length}/50</div>
+            <div class="popup-buttons">
+                <button class="save-btn" data-action="save">💾 Lưu</button>
+                <button class="delete-btn" data-action="delete">🗑️ Xóa</button>
+                <button class="cancel-btn" data-action="cancel">❌ Đóng</button>
+            </div>
+        `;
+    },
+
+    setupPopupEvents(popup, dateKey, dayElement) {
+        const input = popup.querySelector('#eventInput');
+        const charCount = popup.querySelector('.char-count');
+
+        // Đếm ký tự
+        input.addEventListener('input', () => {
+            charCount.textContent = input.value.length + '/50';
+        });
+
+        // Xử lý nút bấm
+        popup.querySelectorAll('button').forEach(button => {
+            button.addEventListener('click', async (e) => {
+                e.stopPropagation();
+                const action = button.dataset.action;
+
+                switch (action) {
+                    case 'save':
+                        await this.handleSave(dateKey, input.value.trim(), popup);
+                        break;
+                    case 'delete':
+                        await this.handleDelete(dateKey, popup);
+                        break;
+                    case 'cancel':
+                        popup.remove();
+                        break;
+                }
+            });
+        });
+
+        // Đóng khi click ra ngoài
+        document.addEventListener('click', (e) => {
+            if (!popup.contains(e.target) && !dayElement.contains(e.target)) {
+                popup.remove();
+            }
+        }, { once: true });
+    },
+
+    async handleSave(dateKey, text, popup) {
+        if (!text) {
+            this.showMessage('⚠️ Vui lòng nhập nội dung!', 'warning');
+            return;
+        }
+
+        events[dateKey] = text;
+
+        if (this.saveEvents()) {
+            this.showMessage('✅ Đã lưu thành công!', 'success');
+            this.render();
+            popup.remove();
+        } else {
+            this.showMessage('❌ Lỗi khi lưu!', 'error');
+        }
+    },
+
+    async handleDelete(dateKey, popup) {
+        if (!confirm('Bạn chắc chắn muốn xóa sự kiện này?')) return;
+
+        delete events[dateKey];
+
+        if (this.saveEvents()) {
+            this.showMessage('🗑️ Đã xóa thành công!', 'success');
+            this.render();
+            popup.remove();
+        } else {
+            this.showMessage('❌ Lỗi khi xóa!', 'error');
+        }
+    },
+
+    removeExistingPopup() {
+        const existing = document.querySelector('.edit-popup');
+        if (existing) existing.remove();
+    },
+
+    addControls() {
+        const controls = document.querySelector('.calendar-controls');
+        if (!controls) return;
+
+        const controlsHTML = `
+            <div class="sync-controls" style="margin-top: 15px; text-align: center;">
+                <button id="syncBtn" style="margin-right: 10px;">🔄 Tải lại</button>
+                <button id="exportBtn">📤 Export JSON</button>
+                <button id="importBtn" style="margin-left: 10px;">📥 Import JSON</button> <br>
+
+                
+                <button id="viewAllBtn" style="margin-left: 10px;">📋 Xem tất cả</button>
+                <div id="syncStatus" style="margin-top: 10px; font-size: 14px; color: #666;">
+                    🟢 Sẵn sàng
+                </div>
+            </div>
+        `;
+
+        controls.insertAdjacentHTML('beforeend', controlsHTML);
+
+        // Thêm sự kiện
+        document.getElementById('syncBtn').addEventListener('click', () => this.loadEvents());
+        document.getElementById('exportBtn').addEventListener('click', () => this.exportData());
+        document.getElementById('importBtn').addEventListener('click', () => this.importData());
+        document.getElementById('viewAllBtn').addEventListener('click', () => this.showAllEvents());
+    },
+
+    exportData() {
+        const dataStr = JSON.stringify(events, null, 2);
+        const dataUri = 'data:application/json;charset=utf-8,' + encodeURIComponent(dataStr);
+        const link = document.createElement('a');
+        link.href = dataUri;
+        link.download = `love-calendar-backup-${new Date().toISOString().split('T')[0]}.json`;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+
+        this.showMessage('📤 Đã xuất file backup!', 'success');
+    },
+
+    importData() {
+        const input = document.createElement('input');
+        input.type = 'file';
+        input.accept = '.json';
+
+        input.addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                try {
+                    const imported = JSON.parse(e.target.result);
+                    events = imported;
+                    this.saveEvents();
+                    this.render();
+                    this.showMessage('📥 Đã import thành công!', 'success');
+                } catch (error) {
+                    this.showMessage('❌ File JSON không hợp lệ!', 'error');
+                }
+            };
+            reader.readAsText(file);
+        });
+
+        input.click();
+    },
+
+    showAllEvents() {
+        if (Object.keys(events).length === 0) {
+            alert('📅 Chưa có sự kiện nào!');
+            return;
+        }
+
+        let message = '📅 TẤT CẢ SỰ KIỆN:\n\n';
+        const sortedDates = Object.keys(events).sort();
+
+        sortedDates.forEach(date => {
+            const [year, month, day] = date.split('-');
+            message += `📌 ${day}/${month}/${year}: ${events[date]}\n`;
+        });
+
+        message += `\n📊 Tổng: ${sortedDates.length} sự kiện`;
+        alert(message);
+    },
+
+    updateStatus(text) {
+        const statusDiv = document.getElementById('syncStatus');
+        if (!statusDiv) return;
+
+        statusDiv.textContent = text;
+        statusDiv.style.color = text.includes('✅') ? '#4CAF50' :
+            text.includes('❌') ? '#f44336' : '#666';
+    },
+
+    showMessage(text, type = 'info') {
+        const colors = {
+            success: '#4CAF50',
+            error: '#f44336',
+            warning: '#FF9800',
+            info: '#2196F3'
+        };
+
+        const msg = document.createElement('div');
+        msg.className = 'floating-message';
+        msg.textContent = text;
+        msg.style.cssText = `
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: ${colors[type] || '#2196F3'};
+            color: white;
+            padding: 12px 20px;
+            border-radius: 8px;
+            z-index: 9999;
+            animation: slideIn 0.3s ease, slideOut 0.3s ease 2.7s;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+            font-size: 14px;
+        `;
+
+        document.body.appendChild(msg);
+
+        setTimeout(() => {
+            if (msg.parentNode) msg.remove();
+        }, 3000);
+    },
+
+    getDateKey(day) {
+        const month = String(CONFIG.calendar.currentMonth + 1).padStart(2, '0');
+        const dayStr = String(day).padStart(2, '0');
+        return `${CONFIG.calendar.currentYear}-${month}-${dayStr}`;
+    },
+
+    getMonthName(monthIndex) {
+        const months = [
+            'Tháng 1', 'Tháng 2', 'Tháng 3', 'Tháng 4',
+            'Tháng 5', 'Tháng 6', 'Tháng 7', 'Tháng 8',
+            'Tháng 9', 'Tháng 10', 'Tháng 11', 'Tháng 12'
+        ];
+        return months[monthIndex];
+    },
+
+    changeMonth(direction) {
+        // Lưu tháng/năm cũ để kiểm tra
+        const oldMonth = CONFIG.calendar.currentMonth;
+        const oldYear = CONFIG.calendar.currentYear;
+
+        // Thay đổi tháng
+        CONFIG.calendar.currentMonth += direction;
+
+        // Xử lý quay vòng năm
+        if (CONFIG.calendar.currentMonth < 0) {
+            CONFIG.calendar.currentMonth = 11;
+            CONFIG.calendar.currentYear--;
+        } else if (CONFIG.calendar.currentMonth > 11) {
+            CONFIG.calendar.currentMonth = 0;
+            CONFIG.calendar.currentYear++;
+        }
+
+        // Kiểm tra xem có thay đổi không
+        if (oldMonth !== CONFIG.calendar.currentMonth || oldYear !== CONFIG.calendar.currentYear) {
+            this.render();
+            this.showMessage(`📅 Đã chuyển sang ${this.getMonthName(CONFIG.calendar.currentMonth)}`, 'info');
+        }
+    },
+
+    // HÀM MỚI: Cập nhật trạng thái nút (disable nếu là tháng hiện tại)
+    updateMonthButtons() {
+        const now = new Date();
+        const currentMonth = now.getMonth();
+        const currentYear = now.getFullYear();
+
+        const prevBtn = document.querySelector('.calendar-controls button:first-child');
+        const nextBtn = document.querySelector('.calendar-controls button:nth-child(2)');
+
+        if (prevBtn) {
+            // Nếu là tháng 1 năm 2025 (giới hạn đầu)
+            const isMinDate = CONFIG.calendar.currentYear === 2025 && CONFIG.calendar.currentMonth === 0;
+            prevBtn.disabled = isMinDate;
+            prevBtn.style.opacity = isMinDate ? '0.5' : '1';
+            prevBtn.title = isMinDate ? 'Không thể quay lại trước năm 2025' : 'Tháng trước';
+        }
+
+        if (nextBtn) {
+            // Nếu là tháng 12 năm 2025 (giới hạn cuối - theo HTML của bạn)
+            const isMaxDate = CONFIG.calendar.currentYear === 2025 && CONFIG.calendar.currentMonth === 11;
+            nextBtn.disabled = isMaxDate;
+            nextBtn.style.opacity = isMaxDate ? '0.5' : '1';
+            nextBtn.title = isMaxDate ? 'Không thể xem sau năm 2025' : 'Tháng sau';
+        }
+    },
+};
+
+// ============================
+// MODULE 3: HIỆU ỨNG BONG BÓNG
+// ============================
+const BubbleEffect = {
+    init() {
+        this.createBubbles();
+        setInterval(() => this.createBubbles(), 10000);
+        this.addStyles();
+        console.log("✨ Hiệu ứng bong bóng đã khởi động!");
+    },
+
+    createBubbles() {
+        const container = document.querySelector('.love-anniversary');
+        if (!container) return;
+
+        for (let i = 0; i < CONFIG.animation.bubbleCount; i++) {
+            setTimeout(() => {
+                const bubble = this.createBubble();
+                container.appendChild(bubble);
+
+                setTimeout(() => {
+                    if (bubble.parentNode) bubble.remove();
+                }, 10000);
+            }, i * 300);
+        }
+    },
+
+    createBubble() {
+        const bubble = document.createElement('div');
+        bubble.className = 'bubble';
+
+        const size = Math.random() *
+            (CONFIG.animation.bubbleMaxSize - CONFIG.animation.bubbleMinSize) +
+            CONFIG.animation.bubbleMinSize;
+
+        const duration = 3 + Math.random() * 4;
+
+        bubble.style.cssText = `
+            width: ${size}px;
+            height: ${size}px;
+            left: ${Math.random() * 100}%;
+            top: ${Math.random() * 100}%;
+            animation: floatBubble ${duration}s ease-in-out infinite,
+                       bubbleOpacity ${duration}s ease-in-out infinite;
+            animation-delay: ${Math.random() * 2}s;
+            background: rgba(255, 107, 154, ${0.2 + Math.random() * 0.3});
+            border-radius: 50%;
+            position: absolute;
+            pointer-events: none;
+        `;
+
+        return bubble;
+    },
+
+    addStyles() {
+        if (document.querySelector('#bubble-styles')) return;
+
+        const style = document.createElement('style');
+        style.id = 'bubble-styles';
+        style.textContent = `
+            @keyframes bubbleOpacity {
+                0%, 100% { opacity: 0.3; }
+                50% { opacity: 0.8; }
+            }
+            @keyframes slideIn {
+                from { transform: translateX(100%); opacity: 0; }
+                to { transform: translateX(0); opacity: 1; }
+            }
+            @keyframes slideOut {
+                from { transform: translateX(0); opacity: 1; }
+                to { transform: translateX(100%); opacity: 0; }
+            }
+        `;
+        document.head.appendChild(style);
+    }
+};
+
+// ============================
+// MODULE 4: UI & INTERACTION
+// ============================
+const UI = {
+    init() {
+        this.initTypedJS();
+        this.initDarkMode();
+        this.initScrollEffects();
+        this.initSmoothScroll();
+        this.initBackToTop();
+        this.initFooterAnimation();
+        console.log("🎨 UI đã khởi động!");
+    },
+
+    initTypedJS() {
+        const typedElement = document.getElementById('typed');
+        if (!typedElement) return;
+
+        if (typeof Typed !== 'undefined') {
+            new Typed(typedElement, {
+                strings: ['Developer', 'Photographer', 'Designer', 'Editor', 'Technician'],
+                typeSpeed: 75,
+                backSpeed: 40,
+                loop: true,
+                showCursor: true,
+                cursorChar: '|'
+            });
+        }
+    },
+
+    initDarkMode() {
+        const toggle = document.getElementById('darkModeToggle');
+        if (!toggle) return;
+
+        const currentTheme = localStorage.getItem('theme') || 'dark-mode';
+        document.body.classList.add(currentTheme);
+        toggle.checked = currentTheme === 'light-mode';
+
+        toggle.addEventListener('change', () => {
+            if (toggle.checked) {
+                document.body.classList.replace('dark-mode', 'light-mode');
+                localStorage.setItem('theme', 'light-mode');
+            } else {
+                document.body.classList.replace('light-mode', 'dark-mode');
+                localStorage.setItem('theme', 'dark-mode');
+            }
+        });
+    },
+
+    initScrollEffects() {
+        const navbar = document.getElementById('mainNav');
+        if (!navbar) return;
+
+        window.addEventListener('scroll', () => {
+            navbar.classList.toggle('scrolled', window.scrollY > 50);
+        });
+    },
+
+    initSmoothScroll() {
+        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+            anchor.addEventListener('click', function (e) {
+                const targetId = this.getAttribute('href');
+                if (targetId === '#') return;
+
+                const targetElement = document.querySelector(targetId);
+                if (targetElement) {
+                    e.preventDefault();
+                    window.scrollTo({
+                        top: targetElement.offsetTop - 80,
+                        behavior: 'smooth'
+                    });
+                }
+            });
+        });
+    },
+
+    initBackToTop() {
+        const button = document.getElementById('backToTop');
+        if (!button) return;
+
+        button.addEventListener('click', (e) => {
+            e.preventDefault();
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        });
+    },
+
+    initFooterAnimation() {
+        const footerElements = document.querySelectorAll('.modern-footer .footer-brand, .modern-footer .footer-columns > div');
+        if (footerElements.length === 0) return;
+
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.style.opacity = '1';
+                    entry.target.style.transform = 'translateY(0)';
+                }
+            });
+        }, { threshold: 0.1 });
+
+        footerElements.forEach((el, index) => {
+            el.style.opacity = '0';
+            el.style.transform = 'translateY(20px)';
+            el.style.transition = `opacity 0.5s ease ${index * 0.1}s, transform 0.5s ease ${index * 0.1}s`;
+            observer.observe(el);
+        });
+    }
+};
+
+// ============================
+// KHỞI TẠO ỨNG DỤNG
+// ============================
+class LoveApp {
+    constructor() {
+        this.modules = [];
+    }
+
+    initialize() {
+        console.log('🚀 Đang khởi động ứng dụng tình yêu...');
+
+        // Kiểm tra và khởi động các module
+        this.loadModule('LoveCounter', LoveCounter);
+        this.loadModule('Calendar', LoveCalendar, () => document.getElementById('calendar'));
+        this.loadModule('BubbleEffect', BubbleEffect, () => document.querySelector('.love-anniversary'));
+        this.loadModule('UI', UI);
+
+        // Thêm CSS động
+        this.addDynamicCSS();
+
+        console.log('✅ Ứng dụng đã sẵn sàng! ❤️');
+    }
+
+    loadModule(name, module, condition = () => true) {
+        if (condition()) {
+            try {
+                module.init();
+                this.modules.push(name);
+                console.log(`✓ ${name} loaded`);
+            } catch (error) {
+                console.error(`✗ ${name} failed:`, error);
+            }
+        } else {
+            console.log(`- ${name} skipped (condition not met)`);
+        }
+    }
+
+    addDynamicCSS() {
+        const style = document.createElement('style');
+        style.textContent = `
+            .edit-popup {
+                position: absolute;
+                top: 100%;
+                left: 50%;
+                transform: translateX(-50%);
+                background: white;
+                padding: 20px;
+                border-radius: 15px;
+                box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+                z-index: 100;
+                min-width: 250px;
+                border: 2px solid #ff6b9a;
+            }
+            
+            .edit-popup h3 {
+                margin: 0 0 15px 0;
+                color: #ff6b9a;
+                text-align: center;
+                font-size: 18px;
+            }
+            
+            .edit-popup input {
+                width: 100%;
+                padding: 10px 12px;
+                border: 2px solid #ffe5ee;
+                border-radius: 10px;
+                margin-bottom: 5px;
+                font-size: 14px;
+                box-sizing: border-box;
+            }
+            
+            .edit-popup input:focus {
+                outline: none;
+                border-color: #ff6b9a;
+            }
+            
+            .char-count {
+                text-align: right;
+                font-size: 12px;
+                color: #999;
+                margin-bottom: 15px;
+            }
+            
+            .popup-buttons {
+                display: flex;
+                gap: 10px;
+                justify-content: center;
+            }
+            
+            .popup-buttons button {
+                flex: 1;
+                padding: 8px 12px;
+                border: none;
+                border-radius: 8px;
+                cursor: pointer;
+                font-weight: bold;
+                font-size: 14px;
+                transition: opacity 0.2s;
+            }
+            
+            .popup-buttons button:hover {
+                opacity: 0.9;
+            }
+            
+            .save-btn { 
+                background: #4CAF50; 
+                color: white; 
+            }
+            .delete-btn { 
+                background: #f44336; 
+                color: white; 
+            }
+            .cancel-btn { 
+                background: #9e9e9e; 
+                color: white; 
+            }
+            
+            .sync-controls button {
+                padding: 8px 16px;
+                border: none;
+                border-radius: 6px;
+                background: #ff6b9a;
+                color: white;
+                cursor: pointer;
+                font-size: 14px;
+                transition: background 0.2s;
+            }
+            
+            .sync-controls button:hover {
+                background: #ff4081;
+            }
+            
+            .sync-controls button:active {
+                transform: scale(0.98);
+            }
+        `;
+        document.head.appendChild(style);
+    }
+
+    getStatus() {
+        return {
+            modules: this.modules,
+            eventsCount: Object.keys(events).length,
+            currentDate: new Date().toLocaleString('vi-VN'),
+            config: CONFIG
+        };
+    }
 }
 
-const CarouselModule = {
-  init(){
-    Utils.qsa(".carousel").forEach(el => new Carousel(el));
-  }
+// ============================
+// KÍCH HOẠT ỨNG DỤNG
+// ============================
+document.addEventListener('DOMContentLoaded', () => {
+    const app = new LoveApp();
+    window.LoveApp = app; // Cho phép truy cập từ console
+    app.initialize();
+
+    // Log trạng thái
+    setTimeout(() => {
+        console.log('📊 Trạng thái ứng dụng:', app.getStatus());
+    }, 1000);
+});
+
+// ============================
+// UTILITY FUNCTIONS
+// ============================
+window.addEventListener('error', function (e) {
+    console.error('❌ Global error:', e.error);
+});
+
+// Export nếu sử dụng module
+if (typeof module !== 'undefined' && module.exports) {
+    module.exports = { LoveCounter, LoveCalendar, BubbleEffect, UI, LoveApp };
+}
+
+
+// <!-- ========================  PHẦN 14: KỈ NIỆM CUỐI NĂM 2025 =============================================================================================================================================================================================== -->
+// <!-- ========================  PHẦN 14: KỈ NIỆM CUỐI NĂM 2025 =============================================================================================================================================================================================== -->
+// <!-- ========================  PHẦN 14: KỈ NIỆM CUỐI NĂM 2025 =============================================================================================================================================================================================== -->
+// <!-- ========================  PHẦN 14: KỈ NIỆM CUỐI NĂM 2025 =============================================================================================================================================================================================== -->
+
+// ============================
+// VƯỜN KỶ NIỆM 3D - ĐÃ FIX LỖI PHÂN TRANG HOÀN TOÀN
+// ============================
+
+// Cấu hình gallery
+const GALLERY_CONFIG = {
+    itemsPerPage: 12,
+    showPageNumbers: false
 };
 
-/* =========================================================
-   MEMORY GALLERY — Vườn kỷ niệm: filter + phân trang + lightbox
-========================================================= */
-const MemoryGallery = {
-  PER_PAGE: 12,
-  page: 1,
-  filter: "all",
-  all: [],
-  filtered: [],
+// Biến toàn cục
+let galleryCurrentPage = 1;
+let galleryCurrentFilter = 'all';
+let galleryAllMemories = [];
+let galleryFilteredMemories = [];
+let galleryTotalPages = 1;
 
-  init(){
-    this.root = Utils.qs("#memoryGallery");
-    if (!this.root) return;
+// Hàm khởi tạo dữ liệu
+function initGalleryData() {
+    console.log('🔄 Đang khởi tạo dữ liệu gallery...');
 
-    this.buildData();
-    this.filtered = [...this.all];
-    this.bindFilters();
-    this.bindPager();
-    this.render();
-  },
+    const galleryData = document.getElementById('galleryData');
 
-  // Dữ liệu ảnh — có thể thay bằng fetch JSON trong tương lai
-  buildData(){
-    const months8 = Array.from(
-      { length: 30 },
-      (_, i) => i + 1
-    ).filter(n => n !== 7 && n !== 28); // giữ đúng danh sách ảnh có thật
+    // Tạo dữ liệu mẫu để test
+    galleryAllMemories = [
+        { url: 'images/8m1.jpg', title: 'KỈ NIỆM BÊN NHAU 8 THÁNG', date: '21/12/2025', category: 'tamthang' },
+        { url: 'images/8m2.jpg', title: 'KỈ NIỆM BÊN NHAU 8 THÁNG', date: '21/12/2025', category: 'tamthang' },
+        { url: 'images/8m3.jpg', title: 'KỈ NIỆM BÊN NHAU 8 THÁNG', date: '21/12/2025', category: 'tamthang' },
+        { url: 'images/8m4.jpg', title: 'KỈ NIỆM BÊN NHAU 8 THÁNG', date: '21/12/2025', category: 'tamthang' },
+        { url: 'images/8m5.jpg', title: 'KỈ NIỆM BÊN NHAU 8 THÁNG', date: '21/12/2025', category: 'tamthang' },
+        { url: 'images/8m6.jpg', title: 'KỈ NIỆM BÊN NHAU 8 THÁNG', date: '21/12/2025', category: 'tamthang' },
+        { url: 'images/8m8.jpg', title: 'KỈ NIỆM BÊN NHAU 8 THÁNG', date: '21/12/2025', category: 'tamthang' },
+        { url: 'images/8m9.jpg', title: 'KỈ NIỆM BÊN NHAU 8 THÁNG', date: '21/12/2025', category: 'tamthang' },
+        { url: 'images/8m10.jpg', title: 'KỈ NIỆM BÊN NHAU 8 THÁNG', date: '21/12/2025', category: 'tamthang' },
+        { url: 'images/8m11.jpg', title: 'KỈ NIỆM BÊN NHAU 8 THÁNG', date: '21/12/2025', category: 'tamthang' },
+        { url: 'images/8m12.jpg', title: 'KỈ NIỆM BÊN NHAU 8 THÁNG', date: '21/12/2025', category: 'tamthang' },
+        { url: 'images/8m13.jpg', title: 'KỈ NIỆM BÊN NHAU 8 THÁNG', date: '21/12/2025', category: 'tamthang' },
+        { url: 'images/8m14.jpg', title: 'KỈ NIỆM BÊN NHAU 8 THÁNG', date: '21/12/2025', category: 'tamthang' },
+        { url: 'images/8m15.jpg', title: 'KỈ NIỆM BÊN NHAU 8 THÁNG', date: '21/12/2025', category: 'tamthang' },
+        { url: 'images/8m16.jpg', title: 'KỈ NIỆM BÊN NHAU 8 THÁNG', date: '21/12/2025', category: 'tamthang' },
+        { url: 'images/8m17.jpg', title: 'KỈ NIỆM BÊN NHAU 8 THÁNG', date: '21/12/2025', category: 'tamthang' },
+        { url: 'images/8m18.jpg', title: 'KỈ NIỆM BÊN NHAU 8 THÁNG', date: '21/12/2025', category: 'tamthang' },
+        { url: 'images/8m19.jpg', title: 'KỈ NIỆM BÊN NHAU 8 THÁNG', date: '21/12/2025', category: 'tamthang' },
+        { url: 'images/8m20.jpg', title: 'KỈ NIỆM BÊN NHAU 8 THÁNG', date: '21/12/2025', category: 'tamthang' },
+        { url: 'images/8m21.jpg', title: 'KỈ NIỆM BÊN NHAU 8 THÁNG', date: '21/12/2025', category: 'tamthang' },
+        { url: 'images/8m22.jpg', title: 'KỈ NIỆM BÊN NHAU 8 THÁNG', date: '21/12/2025', category: 'tamthang' },
+        { url: 'images/8m23.jpg', title: 'KỈ NIỆM BÊN NHAU 8 THÁNG', date: '21/12/2025', category: 'tamthang' },
+        { url: 'images/8m24.jpg', title: 'KỈ NIỆM BÊN NHAU 8 THÁNG', date: '21/12/2025', category: 'tamthang' },
+        { url: 'images/8m25.jpg', title: 'KỈ NIỆM BÊN NHAU 8 THÁNG', date: '21/12/2025', category: 'tamthang' },
+        { url: 'images/8m26.jpg', title: 'KỈ NIỆM BÊN NHAU 8 THÁNG', date: '21/12/2025', category: 'tamthang' },
+        { url: 'images/8m27.jpg', title: 'KỈ NIỆM BÊN NHAU 8 THÁNG', date: '21/12/2025', category: 'tamthang' },
+        { url: 'images/8m29.jpg', title: 'KỈ NIỆM BÊN NHAU 8 THÁNG', date: '21/12/2025', category: 'tamthang' },
+        { url: 'images/8m30.jpg', title: 'KỈ NIỆM BÊN NHAU 8 THÁNG', date: '21/12/2025', category: 'tamthang' },
+        // ----------------------------------------------------------------------------------------------------- title: 'KỈ NIỆM BÊN NHAU 8 THÁNG',
 
-    this.all = months8.map(n => ({
-      url: `image/8m${n}.jpg`,
-      title: "Kỷ niệm bên nhau 8 tháng",
-      date: "21/12/2025",
-      category: "tamthang"
-    }));
-  },
 
-  bindFilters(){
-    Utils.qsa(".chip[data-filter]").forEach(btn => {
-      btn.addEventListener("click", () => {
-        this.filter = btn.dataset.filter;
-        Utils.qsa(".chip[data-filter]").forEach(b => b.classList.toggle("is-active", b === btn));
-        this.filtered = this.filter === "all"
-          ? [...this.all]
-          : this.all.filter(m => m.category === this.filter);
-        this.page = 1;
-        this.render();
-      });
-    });
-  },
 
-  bindPager(){
-    this.prevBtn = Utils.qs("#prevPage");
-    this.nextBtn = Utils.qs("#nextPage");
-    if (this.prevBtn) this.prevBtn.addEventListener("click", () => this.goPage(this.page - 1));
-    if (this.nextBtn) this.nextBtn.addEventListener("click", () => this.goPage(this.page + 1));
-  },
 
-  totalPages(){
-    return Math.max(1, Math.ceil(this.filtered.length / this.PER_PAGE));
-  },
+        // { url: 'images/8m9.jpg', title: 'Ngày đầu gặp gỡ', date: '21/12/2025', category: 'tamthang' },
 
-  goPage(p){
-    this.page = Utils.clamp(p, 1, this.totalPages());
-    this.render();
-  },
+        ...Array.from({ length: 100 }, (_, i) => ({
+            //   url: `images/nt${(i % 4) + 1}.jpg`,
+            //   title: `Kỷ niệm ${i + 7}`,
+            //   date: `${Math.floor(Math.random() * 28) + 1}/0${Math.floor(Math.random() * 9) + 1}/2025`,
+            //   category: ['tamthang', 'travel', 'special'][Math.floor(Math.random() * 3)]
+        }))
+    ];
 
-  render(){
-    const total = this.totalPages();
-    const start = (this.page - 1) * this.PER_PAGE;
-    const items = this.filtered.slice(start, start + this.PER_PAGE);
+    console.log(`✅ Đã tạo ${galleryAllMemories.length} ảnh mẫu`);
+    galleryFilteredMemories = [...galleryAllMemories];
+    calculateGalleryTotalPages();
+    console.log(`📊 Tổng ${galleryAllMemories.length} ảnh, ${galleryTotalPages} trang`);
+}
 
-    this.root.innerHTML = "";
+// Hàm tính tổng số trang
+function calculateGalleryTotalPages() {
+    galleryTotalPages = Math.max(1, Math.ceil(galleryFilteredMemories.length / GALLERY_CONFIG.itemsPerPage));
+    console.log(`📄 Tổng trang: ${galleryTotalPages} (${galleryFilteredMemories.length} ảnh / ${GALLERY_CONFIG.itemsPerPage} mỗi trang)`);
+}
 
-    if (!items.length) {
-      this.root.innerHTML = `<p class="gallery-empty">Chưa có ảnh trong danh mục này.</p>`;
+// Hàm tạo card ảnh
+function createGalleryPhotoCard(memory, index) {
+    const card = document.createElement('div');
+    card.className = 'photo-card';
+    card.setAttribute('data-category', memory.category);
+    card.style.animationDelay = `${index * 0.05}s`;
+
+    const imgHTML = `
+    <div class="photo-frame">
+      <img src="${memory.url}" alt="${memory.title}" loading="lazy" 
+           onerror="this.onerror=null; this.src='https://via.placeholder.com/400x300/12121a/ff6b9d?text=Kỷ+Niệm';">
+      <div class="photo-overlay">
+        <h3>${memory.title}</h3>
+        <p>${memory.date}</p>
+      </div>
+    </div>
+  `;
+
+    card.innerHTML = imgHTML;
+
+    card.addEventListener('click', () => openGalleryLightbox(memory));
+
+    return card;
+}
+
+// Hàm load trang - QUAN TRỌNG: ĐÃ SỬA LỖI
+function loadGalleryPage(page) {
+    console.log(`📖 Đang load trang ${page}...`);
+
+    // Validate page number
+    if (page < 1) page = 1;
+    if (page > galleryTotalPages) page = galleryTotalPages;
+
+    // Cập nhật current page
+    galleryCurrentPage = page;
+    console.log(`📌 Đã cập nhật galleryCurrentPage = ${galleryCurrentPage}`);
+
+    const gallery = document.getElementById('memoryGallery');
+    const loading = document.getElementById('loadingIndicator');
+
+    if (!gallery) {
+        console.error('❌ Không tìm thấy gallery!');
+        return;
+    }
+
+    // Hiện loading
+    if (loading) loading.classList.add('active');
+    gallery.style.opacity = '0.5';
+
+    // Tính toán items cho trang
+    const startIndex = (page - 1) * GALLERY_CONFIG.itemsPerPage;
+    const endIndex = startIndex + GALLERY_CONFIG.itemsPerPage;
+    const pageItems = galleryFilteredMemories.slice(startIndex, endIndex);
+
+    console.log(`➡️ Trang ${page}: Ảnh ${startIndex + 1} đến ${Math.min(endIndex, galleryFilteredMemories.length)}`);
+    console.log(`📸 Có ${pageItems.length} ảnh trên trang này`);
+
+    // Render ngay lập tức
+    setTimeout(() => {
+        // Clear gallery
+        gallery.innerHTML = '';
+
+        // Render các ảnh
+        pageItems.forEach((memory, index) => {
+            const card = createGalleryPhotoCard(memory, index);
+            gallery.appendChild(card);
+        });
+
+        // Nếu không có ảnh
+        if (pageItems.length === 0) {
+            gallery.innerHTML = `
+        <div class="no-photos" style="grid-column: 1/-1; text-align: center; padding: 60px 20px;">
+          <h3 style="color: #ff6b9d;">Không có ảnh nào</h3>
+          <p style="color: #aaa;">Hãy chọn danh mục khác</p>
+        </div>
+      `;
+        }
+
+        // Ẩn loading
+        if (loading) loading.classList.remove('active');
+        gallery.style.opacity = '1';
+
+        // Cập nhật pagination và stats
+        updateGalleryPagination();
+        updateGalleryStats();
+
+        console.log(`✅ Đã load xong trang ${page}`);
+    }, 300); // Tăng thời gian loading để thấy rõ
+}
+
+// Hàm cập nhật phân trang - QUAN TRỌNG: ĐÃ SỬA LỖI
+function updateGalleryPagination() {
+    const pageNumbers = document.getElementById('pageNumbers');
+    const prevBtn = document.getElementById('prevPage');
+    const nextBtn = document.getElementById('nextPage');
+    const currentPageNum = document.getElementById('currentPageNum');
+    const totalPagesNum = document.getElementById('totalPagesNum');
+
+    console.log(`🔄 Cập nhật pagination: Trang ${galleryCurrentPage}/${galleryTotalPages}`);
+    console.log(`Prev nên ${galleryCurrentPage === 1 ? 'disabled' : 'enabled'}`);
+    console.log(`Next nên ${galleryCurrentPage === galleryTotalPages ? 'disabled' : 'enabled'}`);
+
+    // Cập nhật số trang hiển thị
+    if (currentPageNum) {
+        currentPageNum.textContent = galleryCurrentPage;
+    }
+
+    if (totalPagesNum) {
+        totalPagesNum.textContent = galleryTotalPages;
+    }
+
+    // Cập nhật nút prev/next - FIX QUAN TRỌNG
+    if (prevBtn) {
+        const isDisabled = galleryCurrentPage <= 1;
+        prevBtn.disabled = isDisabled;
+        console.log(`⬅️ Nút Prev: ${isDisabled ? 'disabled' : 'enabled'}`);
+    }
+
+    if (nextBtn) {
+        const isDisabled = galleryCurrentPage >= galleryTotalPages;
+        nextBtn.disabled = isDisabled;
+        console.log(`➡️ Nút Next: ${isDisabled ? 'disabled' : 'enabled'}`);
+    }
+
+    // Cập nhật hiển thị số trang nếu cần
+    if (GALLERY_CONFIG.showPageNumbers && pageNumbers) {
+        updatePageNumbersDisplay(pageNumbers);
+    }
+}
+
+// Hàm hiển thị số trang
+function updatePageNumbersDisplay(pageNumbers) {
+    pageNumbers.innerHTML = '';
+
+    if (galleryTotalPages <= 1) {
+        pageNumbers.innerHTML = '<span style="color: #aaa;">Trang 1/1</span>';
+        return;
+    }
+
+    // Hiển thị 5 trang quanh trang hiện tại
+    let startPage = Math.max(1, galleryCurrentPage - 2);
+    let endPage = Math.min(galleryTotalPages, startPage + 4);
+
+    if (endPage - startPage < 4) {
+        startPage = Math.max(1, endPage - 4);
+    }
+
+    for (let i = startPage; i <= endPage; i++) {
+        const pageBtn = document.createElement('button');
+        pageBtn.className = `page-number ${i === galleryCurrentPage ? 'active' : ''}`;
+        pageBtn.textContent = i;
+        pageBtn.onclick = () => {
+            console.log(`👉 Nhấn trang ${i}`);
+            galleryCurrentPage = i;
+            loadGalleryPage(i);
+        };
+        pageNumbers.appendChild(pageBtn);
+    }
+}
+
+// Hàm lọc gallery
+function filterGallery(category) {
+    console.log(`🔍 Lọc theo danh mục: ${category}`);
+
+    galleryCurrentFilter = category;
+
+    // Lọc memories
+    if (category === 'all') {
+        galleryFilteredMemories = [...galleryAllMemories];
     } else {
-      items.forEach((m, i) => {
-        const card = document.createElement("div");
-        card.className = "mem-card";
-        card.style.animationDelay = `${i * 40}ms`;
-        card.innerHTML = `
-          <img src="${m.url}" alt="${m.title}" loading="lazy"
-               onerror="this.onerror=null;this.src='https://via.placeholder.com/400x500/FDF2F8/C9748A?text=Kỷ+Niệm';">
-          <span class="mem-card__tag">${m.date}</span>
-        `;
-        card.addEventListener("click", () => Lightbox.open(m));
-        this.root.appendChild(card);
-      });
+        galleryFilteredMemories = galleryAllMemories.filter(m => m.category === category);
     }
 
-    this.updatePager(total);
-    this.updateStats();
-  },
+    console.log(`✅ Lọc xong: ${galleryFilteredMemories.length} ảnh`);
 
-  updatePager(total){
-    const cur = Utils.qs("#currentPageNum");
-    const tot = Utils.qs("#totalPagesNum");
-    if (cur) cur.textContent = this.page;
-    if (tot) tot.textContent = total;
-    if (this.prevBtn) this.prevBtn.disabled = this.page <= 1;
-    if (this.nextBtn) this.nextBtn.disabled = this.page >= total;
-  },
+    // Tính lại số trang
+    calculateGalleryTotalPages();
 
-  updateStats(){
-    const totalEl = Utils.qs("#totalPhotos");
-    const visEl = Utils.qs("#visiblePhotos");
-    const catEl = Utils.qs("#filteredCategory");
-    const names = { all: "Tất cả", tamthang: "8 Tháng", travel: "Du lịch", special: "Đặc biệt" };
-    if (totalEl) totalEl.textContent = this.all.length;
-    if (visEl) visEl.textContent = this.filtered.length;
-    if (catEl) catEl.textContent = names[this.filter] || "Tất cả";
-  }
-};
+    // Reset về trang 1
+    galleryCurrentPage = 1;
 
-/* =========================================================
-   LIGHTBOX — xem ảnh phóng to
-========================================================= */
-const Lightbox = {
-  init(){
-    this.root = document.createElement("div");
-    this.root.className = "lightbox";
-    this.root.innerHTML = `
-      <button class="icon-btn lightbox__close" aria-label="Đóng">&times;</button>
-      <div class="lightbox__inner">
-        <img alt="">
-        <p class="lightbox__caption"></p>
+    // Load trang 1
+    loadGalleryPage(1);
+
+    // Cập nhật nút active
+    document.querySelectorAll('.control-btn').forEach(btn => {
+        const filter = btn.getAttribute('data-filter');
+        btn.classList.toggle('active', filter === category);
+    });
+
+    // Cập nhật thống kê
+    updateGalleryStats();
+}
+
+// Hàm cập nhật thống kê
+function updateGalleryStats() {
+    const totalEl = document.getElementById('totalPhotos');
+    const visibleEl = document.getElementById('visiblePhotos');
+    const categoryEl = document.getElementById('filteredCategory');
+
+    if (totalEl) totalEl.textContent = galleryAllMemories.length;
+    if (visibleEl) visibleEl.textContent = galleryFilteredMemories.length;
+    if (categoryEl) {
+        const categoryText = {
+            'all': 'Tất cả',
+            'tamthang': '8 Tháng',
+            'travel': 'Du lịch',
+            'special': 'Đặc biệt'
+        };
+        categoryEl.textContent = categoryText[galleryCurrentFilter] || 'Tất cả';
+    }
+}
+
+// Hàm setup event listeners - QUAN TRỌNG: ĐÃ SỬA LỖI
+function setupGalleryEventListeners() {
+    console.log('🔗 Đang thiết lập event listeners...');
+
+    // Lọc danh mục
+    document.querySelectorAll('.control-btn').forEach(button => {
+        button.addEventListener('click', function () {
+            const filter = this.getAttribute('data-filter');
+            console.log(`🎯 Chọn danh mục: ${filter}`);
+            filterGallery(filter);
+        });
+    });
+
+    // Nút prev - FIX QUAN TRỌNG
+    const prevBtn = document.getElementById('prevPage');
+    if (prevBtn) {
+        console.log('✅ Đã tìm thấy nút Prev');
+        prevBtn.addEventListener('click', function () {
+            console.log('⬅️ Nhấn nút Trước');
+            console.log(`Trang hiện tại: ${galleryCurrentPage}, Tổng trang: ${galleryTotalPages}`);
+
+            if (galleryCurrentPage > 1) {
+                galleryCurrentPage--;
+                console.log(`📌 Chuyển sang trang ${galleryCurrentPage}`);
+                loadGalleryPage(galleryCurrentPage);
+            } else {
+                console.log('⚠️ Đã ở trang đầu, không thể nhấn Trước');
+                this.style.cursor = 'not-allowed';
+            }
+        });
+    } else {
+        console.error('❌ Không tìm thấy nút Prev!');
+    }
+
+    // Nút next - FIX QUAN TRỌNG
+    const nextBtn = document.getElementById('nextPage');
+    if (nextBtn) {
+        console.log('✅ Đã tìm thấy nút Next');
+        nextBtn.addEventListener('click', function () {
+            console.log('➡️ Nhấn nút Sau');
+            console.log(`Trang hiện tại: ${galleryCurrentPage}, Tổng trang: ${galleryTotalPages}`);
+
+            if (galleryCurrentPage < galleryTotalPages) {
+                galleryCurrentPage++;
+                console.log(`📌 Chuyển sang trang ${galleryCurrentPage}`);
+                loadGalleryPage(galleryCurrentPage);
+            } else {
+                console.log('⚠️ Đã ở trang cuối, không thể nhấn Sau');
+                this.style.cursor = 'not-allowed';
+            }
+        });
+    } else {
+        console.error('❌ Không tìm thấy nút Next!');
+    }
+
+    // Thêm phím tắt
+    document.addEventListener('keydown', function (e) {
+        if (e.key === 'ArrowLeft' && galleryCurrentPage > 1) {
+            galleryCurrentPage--;
+            loadGalleryPage(galleryCurrentPage);
+        } else if (e.key === 'ArrowRight' && galleryCurrentPage < galleryTotalPages) {
+            galleryCurrentPage++;
+            loadGalleryPage(galleryCurrentPage);
+        }
+    });
+
+    console.log('✅ Event listeners đã sẵn sàng');
+}
+
+// Hàm mở lightbox
+function openGalleryLightbox(memory) {
+    console.log(`🖼️ Mở lightbox: ${memory.title}`);
+
+    const lightbox = document.createElement('div');
+    lightbox.className = 'memory-lightbox';
+    lightbox.innerHTML = `
+    <div class="lightbox-content">
+      <button class="close-lightbox" title="Đóng">&times;</button>
+      <img src="${memory.url}" alt="${memory.title}" loading="eager">
+      <div class="lightbox-info">
+        <h3>${memory.title}</h3>
+        <p>📅 ${memory.date} | 📁 ${getGalleryCategoryName(memory.category)}</p>
+        <button class="love-btn" onclick="galleryLikePhoto(this)">
+          ❤️ <span>${Math.floor(Math.random() * 50)}</span>
+        </button>
       </div>
-    `;
-    document.body.appendChild(this.root);
+    </div>
+  `;
 
-    Utils.qs(".lightbox__close", this.root).addEventListener("click", () => this.close());
-    this.root.addEventListener("click", e => { if (e.target === this.root) this.close(); });
-    document.addEventListener("keydown", e => {
-      if (e.key === "Escape" && this.root.classList.contains("is-open")) this.close();
-    });
-  },
+    document.body.appendChild(lightbox);
+    document.body.style.overflow = 'hidden';
 
-  open(memory){
-    Utils.qs("img", this.root).src = memory.url;
-    Utils.qs("img", this.root).alt = memory.title;
-    Utils.qs(".lightbox__caption", this.root).textContent = `${memory.title} · ${memory.date}`;
-    this.root.classList.add("is-open");
-    document.body.style.overflow = "hidden";
-  },
+    setTimeout(() => lightbox.classList.add('active'), 10);
 
-  close(){
-    this.root.classList.remove("is-open");
-    document.body.style.overflow = "";
-  }
-};
-
-/* =========================================================
-   CALENDAR — lịch kỷ niệm, lưu localStorage
-========================================================= */
-const LoveCalendar = {
-  STORAGE_KEY: "love_calendar_events_v2",
-  state: { month: new Date().getMonth(), year: new Date().getFullYear() },
-  events: {},
-
-  MONTHS: [
-    "Tháng 1","Tháng 2","Tháng 3","Tháng 4","Tháng 5","Tháng 6",
-    "Tháng 7","Tháng 8","Tháng 9","Tháng 10","Tháng 11","Tháng 12"
-  ],
-
-  init(){
-    this.grid = Utils.qs("#calendarGrid");
-    if (!this.grid) return;
-
-    this.titleEl = Utils.qs("#calendarTitle");
-    this.statusEl = Utils.qs("#calendarStatus");
-    this.loadEvents();
-    this.bindNav();
-    this.bindTools();
-    this.render();
-  },
-
-  loadEvents(){
-    try {
-      this.events = JSON.parse(localStorage.getItem(this.STORAGE_KEY)) || {};
-      this.setStatus(`Đã tải ${Object.keys(this.events).length} sự kiện`);
-    } catch {
-      this.events = {};
-      this.setStatus("Không thể đọc dữ liệu đã lưu");
-    }
-  },
-
-  saveEvents(){
-    try {
-      localStorage.setItem(this.STORAGE_KEY, JSON.stringify(this.events));
-      return true;
-    } catch {
-      return false;
-    }
-  },
-
-  setStatus(text){ if (this.statusEl) this.statusEl.textContent = text; },
-
-  bindNav(){
-    const prev = Utils.qs("#calPrev");
-    const next = Utils.qs("#calNext");
-    if (prev) prev.addEventListener("click", () => this.changeMonth(-1));
-    if (next) next.addEventListener("click", () => this.changeMonth(1));
-  },
-
-  bindTools(){
-    const exportBtn = Utils.qs("#calExport");
-    const clearBtn = Utils.qs("#calViewAll");
-    if (exportBtn) exportBtn.addEventListener("click", () => this.exportData());
-    if (clearBtn) clearBtn.addEventListener("click", () => this.showAllEvents());
-  },
-
-  changeMonth(delta){
-    let { month, year } = this.state;
-    month += delta;
-    if (month < 0) { month = 11; year--; }
-    if (month > 11) { month = 0; year++; }
-    this.state = { month, year };
-    this.render();
-  },
-
-  dateKey(day){
-    const m = Utils.pad2(this.state.month + 1);
-    const d = Utils.pad2(day);
-    return `${this.state.year}-${m}-${d}`;
-  },
-
-  render(){
-    const { month, year } = this.state;
-    if (this.titleEl) this.titleEl.textContent = `${this.MONTHS[month]}, ${year}`;
-
-    this.grid.innerHTML = "";
-    const firstDay = new Date(year, month, 1).getDay();
-    const daysInMonth = new Date(year, month + 1, 0).getDate();
-
-    for (let i = 0; i < firstDay; i++) {
-      const empty = document.createElement("div");
-      empty.className = "day-cell is-empty";
-      this.grid.appendChild(empty);
-    }
-
-    for (let d = 1; d <= daysInMonth; d++) {
-      const key = this.dateKey(d);
-      const cell = document.createElement("button");
-      cell.className = "day-cell";
-      cell.type = "button";
-      if (this.events[key]) cell.classList.add("has-event");
-      cell.innerHTML = `<span>${d}</span>${this.events[key] ? '<span class="dot"></span>' : ""}`;
-      cell.title = this.events[key] || "Thêm kỷ niệm";
-      cell.addEventListener("click", () => this.openPopover(cell, key, d));
-      this.grid.appendChild(cell);
-    }
-  },
-
-  openPopover(cell, key, day){
-    Utils.qsa(".day-popover").forEach(p => p.remove());
-
-    const pop = document.createElement("div");
-    pop.className = "day-popover";
-    pop.innerHTML = `
-      <input type="text" maxlength="60" placeholder="Kỷ niệm ngày ${day}..." value="${this.events[key] || ""}">
-      <div class="row">
-        <button class="pop-save">Lưu</button>
-        <button class="pop-delete">Xoá</button>
-        <button class="pop-cancel">Đóng</button>
-      </div>
-    `;
-    cell.appendChild(pop);
-    const input = Utils.qs("input", pop);
-    input.focus();
-
-    Utils.qs(".pop-save", pop).addEventListener("click", (e) => {
-      e.stopPropagation();
-      const val = input.value.trim();
-      if (!val) { Toast.show("Vui lòng nhập nội dung"); return; }
-      this.events[key] = val;
-      this.saveEvents();
-      this.setStatus("Đã lưu kỷ niệm");
-      Toast.show("Đã lưu kỷ niệm ❤");
-      this.render();
+    // Đóng lightbox
+    const closeBtn = lightbox.querySelector('.close-lightbox');
+    closeBtn.addEventListener('click', function () {
+        lightbox.classList.remove('active');
+        setTimeout(() => {
+            if (lightbox.parentNode) {
+                document.body.removeChild(lightbox);
+            }
+            document.body.style.overflow = 'auto';
+        }, 300);
     });
 
-    Utils.qs(".pop-delete", pop).addEventListener("click", (e) => {
-      e.stopPropagation();
-      delete this.events[key];
-      this.saveEvents();
-      Toast.show("Đã xoá kỷ niệm");
-      this.render();
+    lightbox.addEventListener('click', (e) => {
+        if (e.target === lightbox) {
+            lightbox.classList.remove('active');
+            setTimeout(() => {
+                if (lightbox.parentNode) {
+                    document.body.removeChild(lightbox);
+                }
+                document.body.style.overflow = 'auto';
+            }, 300);
+        }
     });
 
-    Utils.qs(".pop-cancel", pop).addEventListener("click", (e) => {
-      e.stopPropagation();
-      pop.remove();
-    });
+    // ESC để đóng
+    function escHandler(e) {
+        if (e.key === 'Escape') {
+            lightbox.classList.remove('active');
+            setTimeout(() => {
+                if (lightbox.parentNode) {
+                    document.body.removeChild(lightbox);
+                }
+                document.body.style.overflow = 'auto';
+            }, 300);
+            document.removeEventListener('keydown', escHandler);
+        }
+    }
+    document.addEventListener('keydown', escHandler);
+}
 
-    const outsideClick = (e) => {
-      if (!pop.contains(e.target) && !cell.contains(e.target)) {
-        pop.remove();
-        document.removeEventListener("click", outsideClick);
-      }
+// Hàm lấy tên danh mục
+function getGalleryCategoryName(category) {
+    const names = {
+        'tamthang': '8 Tháng',
+        'travel': 'Du lịch',
+        'special': 'Đặc biệt',
+        'all': 'Tất cả'
     };
-    setTimeout(() => document.addEventListener("click", outsideClick), 0);
-  },
+    return names[category] || 'Khác';
+}
 
-  exportData(){
-    const data = JSON.stringify(this.events, null, 2);
-    const blob = new Blob([data], { type: "application/json" });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = `love-calendar-${new Date().toISOString().slice(0, 10)}.json`;
-    a.click();
-    URL.revokeObjectURL(url);
-    Toast.show("Đã xuất file backup");
-  },
+// Hàm thích ảnh
+function galleryLikePhoto(btn) {
+    let count = parseInt(btn.querySelector('span').textContent) || 0;
+    count++;
+    btn.querySelector('span').textContent = count;
+    btn.style.transform = 'scale(1.2)';
+    setTimeout(() => btn.style.transform = 'scale(1)', 300);
+    showGalleryNotification('❤️ Bạn đã thích bức ảnh này!');
+}
 
-  showAllEvents(){
-    const keys = Object.keys(this.events).sort();
-    if (!keys.length) { Toast.show("Chưa có sự kiện nào"); return; }
-    Toast.show(`Tổng cộng ${keys.length} sự kiện đã lưu`);
-  }
-};
+// Hàm hiển thị thông báo
+function showGalleryNotification(message) {
+    const notification = document.createElement('div');
+    notification.className = 'memory-notification';
+    notification.textContent = message;
+    document.body.appendChild(notification);
 
-/* =========================================================
-   VIDEO POPUP
-========================================================= */
-const VideoPopup = {
-  init(){
-    this.popup = Utils.qs("#videoPopup");
-    if (!this.popup) return;
-    this.video = Utils.qs("#popupVideo", this.popup);
-    this.closeBtn = Utils.qs("#closeVideoBtn", this.popup);
-    this.overlay = Utils.qs(".video-popup__overlay", this.popup);
+    setTimeout(() => notification.classList.add('show'), 10);
 
-    Utils.qsa("[data-open-video]").forEach(btn => {
-      btn.addEventListener("click", () => this.open(btn.dataset.openVideo));
-    });
+    setTimeout(() => {
+        notification.classList.remove('show');
+        setTimeout(() => {
+            if (notification.parentNode) {
+                document.body.removeChild(notification);
+            }
+        }, 300);
+    }, 3000);
+}
 
-    if (this.closeBtn) this.closeBtn.addEventListener("click", () => this.close());
-    if (this.overlay) this.overlay.addEventListener("click", () => this.close());
-    document.addEventListener("keydown", e => {
-      if (e.key === "Escape" && this.popup.classList.contains("is-open")) this.close();
-    });
-  },
-
-  open(action){
-    if (action === "external") {
-      window.open("100Days.html", "_blank", "noopener,noreferrer");
-      return;
+// Thêm style để fix nút disabled
+document.addEventListener('DOMContentLoaded', function () {
+    const style = document.createElement('style');
+    style.textContent = `
+    .page-btn:disabled {
+      opacity: 0.3 !important;
+      cursor: not-allowed !important;
+      pointer-events: none !important;
     }
-    this.popup.classList.add("is-open");
-    document.body.style.overflow = "hidden";
-    if (this.video) {
-      this.video.currentTime = 0;
-      this.video.play().catch(() => {});
+    
+    .page-btn:not(:disabled):hover {
+      background: rgba(255, 107, 157, 0.2) !important;
+      transform: translateY(-2px) !important;
     }
-  },
+    
+    .control-btn.active {
+      background: linear-gradient(45deg, #ff6b9d, #c77dff) !important;
+      color: white !important;
+      border-color: transparent !important;
+      box-shadow: 0 0 15px rgba(255, 107, 157, 0.4) !important;
+    }
+  `;
+    document.head.appendChild(style);
+});
 
-  close(){
-    this.popup.classList.remove("is-open");
-    document.body.style.overflow = "";
-    if (this.video) this.video.pause();
-  }
+// Khởi động gallery
+document.addEventListener('DOMContentLoaded', function () {
+    console.log('🚀 VƯỜN KỶ NIỆM 3D - KHỞI ĐỘNG');
+
+    // Kiểm tra xem gallery có tồn tại không
+    const gallery = document.getElementById('memoryGallery');
+    if (!gallery) {
+        console.error('❌ Không tìm thấy gallery container!');
+        return;
+    }
+
+    // Khởi tạo dữ liệu
+    initGalleryData();
+
+    // Thiết lập event listeners
+    setupGalleryEventListeners();
+
+    // Load trang đầu tiên
+    loadGalleryPage(1);
+
+    console.log('✅ Gallery đã sẵn sàng!');
+});
+
+// Hàm thêm ảnh mới từ bên ngoài
+window.addMemoryToGallery = function (imageData) {
+    if (imageData && imageData.url) {
+        galleryAllMemories.push({
+            url: imageData.url,
+            title: imageData.title || 'Kỷ niệm mới',
+            date: imageData.date || new Date().toLocaleDateString('vi-VN'),
+            category: imageData.category || 'special'
+        });
+
+        if (galleryCurrentFilter === 'all' || imageData.category === galleryCurrentFilter) {
+            galleryFilteredMemories.push(galleryAllMemories[galleryAllMemories.length - 1]);
+            calculateGalleryTotalPages();
+            loadGalleryPage(galleryCurrentPage);
+        }
+
+        updateGalleryStats();
+        showGalleryNotification('📸 Đã thêm ảnh mới vào gallery!');
+    }
 };
+// <!-- ========================  PHẦN 14: KỈ NIỆM CUỐI NĂM 2025 ======================= -->
 
-/* =========================================================
-   BACK TO TOP
-========================================================= */
-const BackToTop = {
-  init(){
-    this.btn = Utils.qs(".back-to-top");
-    if (!this.btn) return;
-    const onScroll = Utils.debounce(() => {
-      this.btn.classList.toggle("is-visible", window.scrollY > 400);
-    }, 80);
-    window.addEventListener("scroll", onScroll, { passive: true });
-    this.btn.addEventListener("click", () => window.scrollTo({ top: 0, behavior: "smooth" }));
-  }
-};
 
-/* =========================================================
-   APP BOOTSTRAP
-========================================================= */
-const App = {
-  init(){
-    Nav.init();
-    Reveal.init();
-    LoveCounter.init();
-    FooterCounter.init();
-    CarouselModule.init();
-    Lightbox.init();
-    MemoryGallery.init();
-    LoveCalendar.init();
-    VideoPopup.init();
-    BackToTop.init();
-    console.log("💗 Love Story app initialized");
-  }
-};
 
-Utils.onReady(() => App.init());
